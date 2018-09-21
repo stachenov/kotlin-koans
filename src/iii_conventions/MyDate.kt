@@ -7,6 +7,11 @@ data class MyDate(val year: Int, val month: Int, val dayOfMonth: Int): Comparabl
                 .thenBy { it.dayOfMonth }
                 .compare(this, other)
     }
+
+    operator fun plus(interval: TimeInterval) = addTimeIntervals(interval, 1)
+
+    operator fun plus(timeIntervalMultiple: TimeIntervalMultiple) =
+            addTimeIntervals(timeIntervalMultiple.interval, timeIntervalMultiple.multiple)
 }
 
 operator fun MyDate.rangeTo(other: MyDate) = DateRange(this, other)
@@ -14,11 +19,29 @@ operator fun MyDate.rangeTo(other: MyDate) = DateRange(this, other)
 enum class TimeInterval {
     DAY,
     WEEK,
-    YEAR
+    YEAR;
+
+    operator fun times(n: Int): TimeIntervalMultiple {
+        return TimeIntervalMultiple(this, n)
+    }
 }
 
-class DateRange(val start: MyDate, val endInclusive: MyDate) {
-    operator fun contains(date: MyDate): Boolean {
-        return start <= date && date <= endInclusive
+data class TimeIntervalMultiple(val interval: TimeInterval, val multiple: Int)
+
+class DateRange(val start: MyDate, val endInclusive: MyDate): Iterable<MyDate> {
+    override fun iterator() = DateIterator()
+
+    operator fun contains(date: MyDate) = start <= date && date <= endInclusive
+
+    inner class DateIterator() : Iterator<MyDate> {
+        var current = start
+
+        override fun hasNext()= current <= endInclusive
+
+        override fun next(): MyDate {
+            val next = current
+            current = current.nextDay()
+            return next
+        }
     }
 }
